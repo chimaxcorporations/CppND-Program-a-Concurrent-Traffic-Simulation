@@ -1,8 +1,9 @@
 #include <iostream>
 #include <random>
-
+#include <chrono>
+#include <thread>
 #include "TrafficLight.h"
-
+static std::random_device randomDevice;
 /* Implementation of class "MessageQueue" */
 
 
@@ -26,7 +27,7 @@ void MessageQueue<T>::send(T &&msg)
     // FP.4a : The method send should use the mechanisms std::lock_guard<std::mutex> 
     // as well as _condition.notify_one() to add a new message to the queue and afterwards send a notification.
     std::lock_guard<std::mutex> gLock(_mutex);
-    _queue.push_back(std::move(msg));
+    _queue.emplace_back(std::move(msg));
     _condition.notify_one();
 }
 
@@ -73,9 +74,9 @@ void TrafficLight::cycleThroughPhases()
     // to the message queue using move semantics. The cycle duration should be a random value between 4 and 6 seconds. 
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles. 
     // Random number generator
-    std::random_device randomDevice;
+//     std::random_device randomDevice;
     std::mt19937 mt(randomDevice());
-    std::uniform_real_distribution<double> dist(4.0, 6.0);
+    std::uniform_real_distribution<double> dist(4,6);
     float cycleTime = dist(mt);
 
     // init variables for measuring time
@@ -84,7 +85,7 @@ void TrafficLight::cycleThroughPhases()
 
     while (true) {
         // sleep for 100 miliseconds is enough since we wait for 4-6s
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
         measuredTime = std::chrono::high_resolution_clock::now() - start;
 
         if (measuredTime.count() > cycleTime) {
@@ -96,8 +97,8 @@ void TrafficLight::cycleThroughPhases()
                 (_currentPhase == TrafficLightPhase::green) ? red : green;
 
             // send update method to message queue using move semantics.
-            TrafficLightPhase p = _currentPhase;
-            _messageQueue.send(std::move(p));
+//             TrafficLightPhase p = _currentPhase;
+            _messageQueue.send(std::move(_currentPhase));
         }
     }
 }
